@@ -26,7 +26,7 @@ namespace WebNode.Controllers
         private static bool leaderFlag = false;
         [Route("api/start")]
         [HttpPost]
-        public async Task<IActionResult> Start()
+        public IActionResult Start()
         {
             var starter = new
             {
@@ -39,7 +39,7 @@ namespace WebNode.Controllers
             {
                 try
                 {
-                    await httpClient.PostAsync($"{node}/api/startdash", data);
+                    httpClient.PostAsync($"{node}/api/startdash", data);
                 }
                 catch (HttpRequestException e)
                 {
@@ -75,7 +75,7 @@ namespace WebNode.Controllers
 
         [Route("api/heartbeat")]
         [HttpGet]
-        public async Task<IActionResult> GetHeartBeart([FromQuery] int client)
+        public IActionResult GetHeartBeart([FromQuery] int client)
         {
             if (!voter.Contains(client))
             {
@@ -95,7 +95,7 @@ namespace WebNode.Controllers
                 {
                     try
                     {
-                        await httpClient.PostAsync($"{node}/api/setleader", data);
+                        httpClient.PostAsync($"{node}/api/setleader", data);
                     }
                     catch (HttpRequestException e)
                     {
