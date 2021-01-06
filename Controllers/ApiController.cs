@@ -1,0 +1,226 @@
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using System.Timers;
+
+namespace WebNode.Controllers
+{
+    [ApiController]
+    public class ApiController : ControllerBase
+    {
+        private static int leader = 0;
+        private static int trust = 0;
+        private static List<int> voter = new List<int>();
+        private static bool startFlag = false;
+        private static bool leaderFlag = false;
+        [Route("api/start")]
+        [HttpPost]
+        public async Task<IActionResult> Start()
+        {
+            var starter = new
+            {
+                starter = GlobalVars.NodeNumber
+            };
+
+            var json = JsonConvert.SerializeObject(starter);
+            var data = new StringContent(json, Encoding.UTF8, "application/json");
+            foreach (string node in GlobalVars.OtherNodes)
+            {
+                try
+                {
+                    using var client = new HttpClient();
+                    HttpResponseMessage response = await client.PostAsync($"{node}/api/startdash", data);
+                    Console.WriteLine(response.StatusCode);
+                    response.EnsureSuccessStatusCode();
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    // Above three lines can be replaced with new helper method below
+                    // string responseBody = await client.PostAsync($"{node}/api/start", data);
+
+                }
+                catch (HttpRequestException e)
+                {
+                    Console.WriteLine("\nException Caught!");
+                    Console.WriteLine("Message :{0} ", e.Message);
+                }
+            }
+            return Ok("start");
+        }
+
+        [Route("api/startdash")]
+        [HttpPost]
+        public IActionResult StartDash([FromBody] object jsonStr)
+        {
+            int starter;
+            try
+            {
+                JObject jo = JObject.Parse(jsonStr.ToString());
+                starter = jo.Value<int>("starter");
+            }
+            catch (Exception)
+            {
+                return BadRequest(new { error = "Invalid input" });
+            }
+            if (starter == GlobalVars.NodeNumber)
+            {
+                leaderFlag = true;
+            }
+            trust = starter;
+            startFlag = true;
+            return Ok($"{GlobalVars.NodeNumber} Started");
+        }
+
+        [Route("api/heartbeat")]
+        [HttpGet]
+        public async Task<IActionResult> GetHeartBeart([FromQuery] int client)
+        {
+            if (!voter.Contains(client))
+            {
+                voter.Add(client);
+            }
+            if(voter.Count > GlobalVars.NodeAmount / 2)
+            {
+                ApiController.leader = GlobalVars.NodeNumber;
+                var leader = new
+                {
+                    node = GlobalVars.NodeNumber
+                };
+
+                var json = JsonConvert.SerializeObject(leader);
+                var data = new StringContent(json, Encoding.UTF8, "application/json");
+                foreach (string node in GlobalVars.OtherNodes)
+                {
+                    try
+                    {
+                        using var httpClient = new HttpClient();
+                        HttpResponseMessage response = await httpClient.PostAsync($"{node}/api/setleader", data);
+                        Console.WriteLine(response.StatusCode);
+                        response.EnsureSuccessStatusCode();
+                        string responseBody = await response.Content.ReadAsStringAsync();
+                        // Above three lines can be replaced with new helper method below
+                        // string responseBody = await client.PostAsync($"{node}/api/start", data);
+
+                    }
+                    catch (HttpRequestException e)
+                    {
+                        Console.WriteLine("\nException Caught!");
+                        Console.WriteLine("Message :{0} ", e.Message);
+                    }
+                }
+            }
+            IConfiguration jsonConfiguration = new ConfigurationBuilder()
+                .AddJsonFile("settings.json", true, true) // 添加 Json 文件配置
+                .Build();
+            await Task.Delay(Convert.ToInt32(jsonConfiguration["time"]));
+            return Ok($"success form {GlobalVars.NodeNumber}");
+        }
+
+        [Route("api/setleader")]
+        [HttpPost]
+        public IActionResult SetLeader([FromBody] object jsonStr)
+        {
+            try
+            {
+                JObject jo = JObject.Parse(jsonStr.ToString());
+                ApiController.leader = jo.Value<int>("node");
+            }
+            catch (Exception)
+            {
+                return BadRequest(new { error = "Invalid input" });
+            }
+            return Ok($"Node {GlobalVars.NodeNumber} set leader {leader}");
+        }
+
+        [Route("api/deletevote")]
+        [HttpDelete]
+        public IActionResult DeleteVote([FromQuery] int client)
+        {
+            if (voter.Contains(client))
+            {
+                voter.Remove(client);
+                return NoContent();
+            }
+            else return NotFound();
+        }
+
+
+        [NonAction]
+        public static void Run()
+        {
+            Timer timer = new()
+            {
+                Enabled = true,
+                Interval = 5000
+            };
+            while (true)
+            {
+                if (leaderFlag)
+                {
+                    continue;
+                }
+                else if (startFlag)
+                {
+                    timer.Start();
+                    timer.Elapsed += new ElapsedEventHandler(HeartBeat);
+                }
+            }
+        }
+
+        [NonAction]
+        private async static void HeartBeat(object source, ElapsedEventArgs e)
+        {
+            Console.Write("HeartBeat Start");
+            try
+            {
+                using var client = new HttpClient();
+                HttpResponseMessage response = await client.GetAsync($"{GlobalVars.OtherNodes[trust]}/api/heartbeat?client={GlobalVars.NodeNumber}");
+                response.EnsureSuccessStatusCode();
+                if (response.StatusCode == System.Net.HttpStatusCode.RequestTimeout)
+                {
+                    throw new TimeoutException();
+                }
+                string responseBody = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine(responseBody);
+            }
+            catch (TimeoutException)
+            {
+                try
+                {
+                    using var httpClient = new HttpClient();
+                    HttpResponseMessage response = await httpClient.DeleteAsync($"{GlobalVars.OtherNodes[trust]}/api/deletevote?client={GlobalVars.NodeNumber}");
+                    Console.WriteLine(response.StatusCode);
+                    response.EnsureSuccessStatusCode();
+                    // Above three lines can be replaced with new helper method below
+                    // string responseBody = await client.PostAsync($"{node}/api/start", data);
+                }
+                catch (HttpRequestException ex)
+                {
+                    Console.WriteLine("\nException Caught!");
+                    Console.WriteLine("Message :{0} ", ex.Message);
+                }
+
+                trust++;
+                if (trust >= GlobalVars.NodeAmount)
+                {
+                    trust = 0;
+                }
+
+                Console.WriteLine($"Leader {leader} failed, vote to next node {trust}");
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine("\nException Caught!");
+                Console.WriteLine("Message :{0} ", ex.Message);
+            }
+        }
+    }
+}
