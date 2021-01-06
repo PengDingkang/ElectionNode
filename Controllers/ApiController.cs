@@ -9,6 +9,7 @@ using System.Configuration;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -147,7 +148,7 @@ namespace WebNode.Controllers
 
 
         [NonAction]
-        public async static Task Run()
+        public static Task Run()
         {
             while (true)
             {
@@ -158,8 +159,8 @@ namespace WebNode.Controllers
                 else if (startFlag)
                 {
                     HeartBeat();
-                    await Task.Delay(5000);
                 }
+                Thread.Sleep(10000);
             }
         }
 
@@ -174,24 +175,9 @@ namespace WebNode.Controllers
                 string responseBody = await response.Content.ReadAsStringAsync();
                 Console.WriteLine(responseBody);
             }
-            catch (HttpRequestException ex)
+            catch (HttpRequestException)
             {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", ex.Message);
-                try
-                {
-                    using var httpClient = new HttpClient();
-                    HttpResponseMessage response = await httpClient.DeleteAsync($"{GlobalVars.OtherNodes[trust]}/api/deletevote?client={GlobalVars.NodeNumber}");
-                    Console.WriteLine(response.StatusCode);
-                    response.EnsureSuccessStatusCode();
-                }
-                catch (HttpRequestException e)
-                {
-                    Console.WriteLine("\nHost down!");
-                    Console.WriteLine("Message :{0} ", e.Message);
-                }
-
-                trust++;
+                trust = leader + 1;
                 if (trust >= GlobalVars.NodeAmount)
                 {
                     trust = 0;
