@@ -41,10 +41,7 @@ namespace WebNode.Controllers
                     HttpResponseMessage response = await client.PostAsync($"{node}/api/startdash", data);
                     Console.WriteLine(response.StatusCode);
                     response.EnsureSuccessStatusCode();
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    // Above three lines can be replaced with new helper method below
-                    // string responseBody = await client.PostAsync($"{node}/api/start", data);
-
+                    await response.Content.ReadAsStringAsync();
                 }
                 catch (HttpRequestException e)
                 {
@@ -86,7 +83,7 @@ namespace WebNode.Controllers
             {
                 voter.Add(client);
             }
-            if(voter.Count > GlobalVars.NodeAmount / 2)
+            if (voter.Count > GlobalVars.NodeAmount / 2)
             {
                 ApiController.leader = GlobalVars.NodeNumber;
                 var leader = new
@@ -105,9 +102,6 @@ namespace WebNode.Controllers
                         Console.WriteLine(response.StatusCode);
                         response.EnsureSuccessStatusCode();
                         string responseBody = await response.Content.ReadAsStringAsync();
-                        // Above three lines can be replaced with new helper method below
-                        // string responseBody = await client.PostAsync($"{node}/api/start", data);
-
                     }
                     catch (HttpRequestException e)
                     {
@@ -177,29 +171,24 @@ namespace WebNode.Controllers
                 using var client = new HttpClient();
                 HttpResponseMessage response = await client.GetAsync($"{GlobalVars.OtherNodes[trust]}/api/heartbeat?client={GlobalVars.NodeNumber}");
                 response.EnsureSuccessStatusCode();
-                if (response.StatusCode == System.Net.HttpStatusCode.RequestTimeout)
-                {
-                    throw new TimeoutException();
-                }
                 string responseBody = await response.Content.ReadAsStringAsync();
-
                 Console.WriteLine(responseBody);
             }
-            catch (TimeoutException)
+            catch (HttpRequestException ex)
             {
+                Console.WriteLine("\nException Caught!");
+                Console.WriteLine("Message :{0} ", ex.Message);
                 try
                 {
                     using var httpClient = new HttpClient();
                     HttpResponseMessage response = await httpClient.DeleteAsync($"{GlobalVars.OtherNodes[trust]}/api/deletevote?client={GlobalVars.NodeNumber}");
                     Console.WriteLine(response.StatusCode);
                     response.EnsureSuccessStatusCode();
-                    // Above three lines can be replaced with new helper method below
-                    // string responseBody = await client.PostAsync($"{node}/api/start", data);
                 }
-                catch (HttpRequestException ex)
+                catch (HttpRequestException e)
                 {
-                    Console.WriteLine("\nException Caught!");
-                    Console.WriteLine("Message :{0} ", ex.Message);
+                    Console.WriteLine("\nHost down!");
+                    Console.WriteLine("Message :{0} ", e.Message);
                 }
 
                 trust++;
@@ -209,11 +198,6 @@ namespace WebNode.Controllers
                 }
 
                 Console.WriteLine($"Leader {leader} failed, vote to next node {trust}");
-            }
-            catch (HttpRequestException ex)
-            {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", ex.Message);
             }
         }
     }

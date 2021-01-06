@@ -31,7 +31,7 @@ namespace WebNode
                    .UseKestrel(o =>
                    {
                        o.Listen(IPAddress.Loopback, Convert.ToInt32(GlobalVars.listenPort));
-                       o.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(3);
+                       // o.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(3);
                    })
                    .UseUrls($"http://localhost:{GlobalVars.listenPort}")
                    .UseContentRoot(Directory.GetCurrentDirectory())
