@@ -84,6 +84,7 @@ namespace WebNode.Controllers
             if (voter.Count > GlobalVars.NodeAmount / 2)
             {
                 ApiController.leader = GlobalVars.NodeNumber;
+                leaderFlag = true;
                 var leader = new
                 {
                     node = GlobalVars.NodeNumber
