@@ -123,6 +123,11 @@ namespace WebNode.Controllers
             {
                 return BadRequest(new { error = "Invalid input" });
             }
+            if (!startFlag)
+            {
+                startFlag = true;
+                trust = leader;
+            }
             return Ok($"Node {GlobalVars.NodeNumber} set leader {leader}");
         }
 
@@ -152,7 +157,7 @@ namespace WebNode.Controllers
                 {
                     HeartBeat();
                 }
-                Thread.Sleep(15000);
+                Thread.Sleep(10000);
             }
         }
 
