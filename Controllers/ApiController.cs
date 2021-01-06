@@ -153,13 +153,8 @@ namespace WebNode.Controllers
 
 
         [NonAction]
-        public static void Run()
+        public async static Task Run()
         {
-            Timer timer = new()
-            {
-                Enabled = true,
-                Interval = 5000
-            };
             while (true)
             {
                 if (leaderFlag)
@@ -168,16 +163,15 @@ namespace WebNode.Controllers
                 }
                 else if (startFlag)
                 {
-                    timer.Start();
-                    timer.Elapsed += new ElapsedEventHandler(HeartBeat);
+                    HeartBeat();
+                    await Task.Delay(5000);
                 }
             }
         }
 
         [NonAction]
-        private async static void HeartBeat(object source, ElapsedEventArgs e)
+        private async static void HeartBeat()
         {
-            Console.Write("HeartBeat Start");
             try
             {
                 using var client = new HttpClient();

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using WebNode.Controllers;
 
@@ -16,8 +17,10 @@ namespace WebNode
     {
         public static void Main(string[] args)
         {
+            new Thread(() => {
+                ApiController.Run();
+            }).Start();
             CreateHostBuilder(args).Build().Run();
-            ApiController.Run();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
