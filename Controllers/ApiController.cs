@@ -18,6 +18,7 @@ namespace WebNode.Controllers
     [ApiController]
     public class ApiController : ControllerBase
     {
+        static readonly HttpClient httpClient = new HttpClient();
         private static int leader = 0;
         private static int trust = 0;
         private static List<int> voter = new List<int>();
@@ -38,11 +39,7 @@ namespace WebNode.Controllers
             {
                 try
                 {
-                    using var client = new HttpClient();
-                    HttpResponseMessage response = await client.PostAsync($"{node}/api/startdash", data);
-                    Console.WriteLine(response.StatusCode);
-                    response.EnsureSuccessStatusCode();
-                    await response.Content.ReadAsStringAsync();
+                    await httpClient.PostAsync($"{node}/api/startdash", data);
                 }
                 catch (HttpRequestException e)
                 {
@@ -98,11 +95,7 @@ namespace WebNode.Controllers
                 {
                     try
                     {
-                        using var httpClient = new HttpClient();
-                        HttpResponseMessage response = await httpClient.PostAsync($"{node}/api/setleader", data);
-                        Console.WriteLine(response.StatusCode);
-                        response.EnsureSuccessStatusCode();
-                        string responseBody = await response.Content.ReadAsStringAsync();
+                        await httpClient.PostAsync($"{node}/api/setleader", data);
                     }
                     catch (HttpRequestException e)
                     {
@@ -114,7 +107,6 @@ namespace WebNode.Controllers
             IConfiguration jsonConfiguration = new ConfigurationBuilder()
                 .AddJsonFile("settings.json", true, true) // 添加 Json 文件配置
                 .Build();
-            await Task.Delay(Convert.ToInt32(jsonConfiguration["time"]));
             return Ok($"success form {GlobalVars.NodeNumber}");
         }
 
@@ -160,7 +152,7 @@ namespace WebNode.Controllers
                 {
                     HeartBeat();
                 }
-                Thread.Sleep(10000);
+                Thread.Sleep(15000);
             }
         }
 
@@ -169,8 +161,7 @@ namespace WebNode.Controllers
         {
             try
             {
-                using var client = new HttpClient();
-                HttpResponseMessage response = await client.GetAsync($"{GlobalVars.OtherNodes[trust]}/api/heartbeat?client={GlobalVars.NodeNumber}");
+                HttpResponseMessage response = await httpClient.GetAsync($"{GlobalVars.OtherNodes[trust]}/api/heartbeat?client={GlobalVars.NodeNumber}");
                 response.EnsureSuccessStatusCode();
                 string responseBody = await response.Content.ReadAsStringAsync();
                 Console.WriteLine(responseBody);
