@@ -27,10 +27,10 @@ namespace WebNode
                     webBuilder
                    .UseKestrel(o =>
                    {
-                       o.Listen(IPAddress.Loopback, Convert.ToInt32(GlobalVars.listenPort));
+                       o.Listen(IPAddress.Any, Convert.ToInt32(GlobalVars.listenPort));
                        // o.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(3);
                    })
-                   .UseUrls($"http://localhost:{GlobalVars.listenPort}")
+                   .UseUrls($"http://0.0.0.0:{GlobalVars.listenPort}")
                    .UseContentRoot(Directory.GetCurrentDirectory())
                    .ConfigureAppConfiguration((hostingContext, config) =>
                    {
