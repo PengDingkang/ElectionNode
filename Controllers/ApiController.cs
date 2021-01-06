@@ -1,17 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 
 namespace WebNode.Controllers
 {
@@ -105,9 +100,7 @@ namespace WebNode.Controllers
                     }
                 }
             }
-            IConfiguration jsonConfiguration = new ConfigurationBuilder()
-                .AddJsonFile("settings.json", true, true) // 添加 Json 文件配置
-                .Build();
+            Console.WriteLine($"Get heartbeat from {client}");
             return Ok($"success form {GlobalVars.NodeNumber}");
         }
 
