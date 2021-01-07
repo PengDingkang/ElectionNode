@@ -16,7 +16,7 @@ namespace WebNode.Controllers
         static readonly HttpClient httpClient = new HttpClient();
         private static int leader = 0;
         private static int trust = 0;
-        private static List<int> voter = new List<int>();
+        private static List<Node> voter = new List<Node>();
         private static bool startFlag = false;
         private static bool leaderFlag = false;
         [Route("api/start")]
@@ -72,11 +72,28 @@ namespace WebNode.Controllers
         [HttpGet]
         public IActionResult GetHeartBeart([FromQuery] int client)
         {
-            if (!voter.Contains(client))
+            int voters = 0;
+            bool newNode = true;
+
+            foreach(Node node in voter)
             {
-                voter.Add(client);
+                if(node.clientId == client)
+                {
+                    node.Refresh();
+                    newNode = false;
+                }
+                if (!node.Expired())
+                {
+                    voters++;
+                }
             }
-            if (voter.Count > GlobalVars.NodeAmount / 2)
+            if (newNode)
+            {
+                Node addNode = new(client);
+                voter.Add(addNode);
+                voters++;
+            }
+            if (voters > GlobalVars.NodeAmount / 2)
             {
                 ApiController.leader = GlobalVars.NodeNumber;
                 leaderFlag = true;
@@ -125,19 +142,6 @@ namespace WebNode.Controllers
             return Ok($"Node {GlobalVars.NodeNumber} set leader {leader}");
         }
 
-        [Route("api/deletevote")]
-        [HttpDelete]
-        public IActionResult DeleteVote([FromQuery] int client)
-        {
-            if (voter.Contains(client))
-            {
-                voter.Remove(client);
-                return NoContent();
-            }
-            else return NotFound();
-        }
-
-
         [NonAction]
         public static Task Run()
         {
@@ -175,6 +179,31 @@ namespace WebNode.Controllers
 
                 Console.WriteLine($"Leader {leader} failed, vote to next node {trust}");
             }
+        }
+    }
+
+    public class Node
+    {
+        public int clientId { get; set; }
+        public DateTime setTime { get; set; }
+        public DateTime expireTime { get; set; }
+        public Node(int clientId)
+        {
+            this.clientId = clientId;
+            Refresh();
+        }
+        public bool Expired()
+        {
+            if (expireTime > setTime)
+            {
+                return false;
+            }
+            else return true;
+        }
+        public void Refresh()
+        {
+            setTime = DateTime.Now;
+            expireTime = setTime.AddSeconds(10);
         }
     }
 }
