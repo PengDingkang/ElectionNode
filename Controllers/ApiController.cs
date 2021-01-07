@@ -121,7 +121,8 @@ namespace WebNode.Controllers
                     }
                     try
                     {
-                        httpClient.PostAsync($"{GlobalVars.OtherNodes}/api/setleader", data);
+                        httpClient.PostAsync($"{GlobalVars.OtherNodes[i]}/api/setleader", data);
+                        Console.WriteLine($"Try to wake up node {i}");
                     }
                     catch (HttpRequestException e)
                     {
