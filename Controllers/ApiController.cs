@@ -23,6 +23,10 @@ namespace WebNode.Controllers
         [HttpPost]
         public IActionResult Start()
         {
+            if (startFlag)
+            {
+                return BadRequest("Already started");
+            }
             var starter = new
             {
                 starter = GlobalVars.NodeNumber
@@ -74,6 +78,10 @@ namespace WebNode.Controllers
         {
             int voters = 0;
             bool newNode = true;
+            List<int> activeNodes = new List<int>()
+            {
+                GlobalVars.NodeNumber
+            };
 
             foreach(Node node in voter)
             {
@@ -85,6 +93,7 @@ namespace WebNode.Controllers
                 if (!node.Expired())
                 {
                     voters++;
+                    activeNodes.Add(node.clientId);
                 }
             }
             if (newNode)
@@ -104,11 +113,15 @@ namespace WebNode.Controllers
 
                 var json = JsonConvert.SerializeObject(leader);
                 var data = new StringContent(json, Encoding.UTF8, "application/json");
-                foreach (string node in GlobalVars.OtherNodes)
+                for (int i = 0; i < GlobalVars.NodeAmount; i++)
                 {
+                    if (activeNodes.Contains(i))
+                    {
+                        continue;
+                    }
                     try
                     {
-                        httpClient.PostAsync($"{node}/api/setleader", data);
+                        httpClient.PostAsync($"{GlobalVars.OtherNodes}/api/setleader", data);
                     }
                     catch (HttpRequestException e)
                     {
