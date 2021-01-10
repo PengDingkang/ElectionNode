@@ -10,7 +10,7 @@
   <appSettings>
     <add key="OtherNodes" value="http://localhost:PORT0,http://localhost:PORT1, ..."/>
     <add key="ListenPort" value="port of this node"/>
-    <add key="NodeNumber" value="number of thi node"/>
+    <add key="NodeNumber" value="number(or id) of this node"/>
     <add key="NodeAmount" value="amount of nodes"/>
   </appSettings>
 </configuration>
